@@ -196,7 +196,7 @@ tab-group:not(zen-folder) .tabbrowser-tab[group]::before {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 0px;
   flex-shrink: 1;
   margin: 0 auto;
   /* Container is a no-op until JS adds visibility classes that
