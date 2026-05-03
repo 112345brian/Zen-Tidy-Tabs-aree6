@@ -207,13 +207,9 @@ tab-group:not(zen-folder) .tabbrowser-tab[group]::before {
   pointer-events: none;
 }
 
-/* Compact mode - icon only when sidebar is narrow */
-.tidy-tabs-compact .tidy-tabs-inline-btn .btn-label {
+/* Compact mode - hide inline buttons when sidebar is collapsed */
+.tidy-tabs-compact .tidy-tabs-button-container {
   display: none !important;
-}
-
-.tidy-tabs-compact .tidy-tabs-inline-btn {
-  padding: 2px 4px !important;
 }
 
 /* Hide Zen/native separator controls while our inline controls own this row.
