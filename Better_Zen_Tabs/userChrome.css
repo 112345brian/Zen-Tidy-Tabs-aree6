@@ -161,3 +161,17 @@ tab-group[split-view-group] .tabbrowser-tab {
   min-height: var(--zen-tabs-split-tab-height, 40px) !important;
 }
 
+/* ------------------------------------------------------------------
+   NEW TAB BUTTON — hide text, center icon
+   ------------------------------------------------------------------ */
+
+#tabs-newtab-button .toolbarbutton-text {
+  display: none !important;
+}
+
+#tabs-newtab-button {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
