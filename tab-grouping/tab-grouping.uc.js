@@ -400,6 +400,7 @@
   let isSorting = false;
   let isPlayingFailureAnimation = false;
   let sortAnimationId = null;
+  let savedTabOrder = {};
   let eventListenersAdded = false;
   let sidebarMenuListenersAdded = false;
   let sidebarPopupShowingHandler = null;
@@ -2305,6 +2306,16 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         return !isTabInWorkspaceGroup(tab, currentWorkspaceId);
       });
 
+      savedTabOrder[currentWorkspaceId] = getFilteredTabs(currentWorkspaceId, {
+        includeGrouped: false,
+        includeSelected: true,
+        includePinned: true,
+        includeEmpty: false,
+        includeGlance: false,
+      })
+        .map((tab) => tab.linkedBrowser?.currentURI?.spec || "")
+        .filter(Boolean);
+
       if (initialTabsToSort.length === 0) {
         console.log("[TabSort] No eligible tabs to sort in current workspace.");
         return;
@@ -2801,6 +2812,34 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
     return isReleased();
   };
 
+  const restoreTabOrder = (workspaceId, savedUrls) => {
+    const workspaceElement = window.gZenWorkspaces?.activeWorkspaceElement;
+    if (!workspaceElement?.tabsContainer || !savedUrls?.length) return;
+
+    const tabsContainer = workspaceElement.tabsContainer;
+    const urlToTab = new Map();
+
+    const looseTabs = getFilteredTabs(workspaceId, {
+      includeGrouped: false,
+      includeSelected: true,
+      includePinned: true,
+      includeEmpty: false,
+      includeGlance: false,
+    });
+
+    for (const tab of looseTabs) {
+      const url = tab.linkedBrowser?.currentURI?.spec;
+      if (url) urlToTab.set(url, tab);
+    }
+
+    for (const url of savedUrls) {
+      const tab = urlToTab.get(url);
+      if (tab?.isConnected && !tab.closest(":is(tab-group, zen-folder)")) {
+        tabsContainer.appendChild(tab);
+      }
+    }
+  };
+
   // Ungroup all tabs in the current workspace: removes each tab from its
   // group/folder so they become loose again. This is intentionally
   // non-destructive: it never calls removeTabs/removeTabGroup on gBrowser,
@@ -2847,6 +2886,12 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       } catch (e) {
         console.warn(`[TidyTabs] Error ungrouping "${groupEl.getAttribute("label")}":`, e);
       }
+    }
+
+    const savedOrder = savedTabOrder[workspaceId];
+    if (savedOrder?.length) {
+      restoreTabOrder(workspaceId, savedOrder);
+      delete savedTabOrder[workspaceId];
     }
 
     domCache.invalidate();
@@ -3191,17 +3236,16 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
 
       sep.appendChild(container);
 
-      // Detect if sidebar is in compact mode or too narrow - switch to icon-only mode
-      // Check for Zen's compact mode attribute first
-      const isCompactMode = document.documentElement?.hasAttribute("zen-compact-mode") ||
-                           document.querySelector("#sidebar-box")?.classList.contains("zen-sidebar-compact");
-      
-      // Get sidebar width
+      // Detect if sidebar is collapsed/compact — hide buttons for better UX
+      // Primary signal: zen-sidebar-expanded is "false" or absent when sidebar is collapsed
+      const sidebarExpanded = document.documentElement?.getAttribute("zen-sidebar-expanded") === "true";
+      const zenCompactAttr = document.documentElement?.hasAttribute("zen-compact-mode");
+      const zenCompactClass = document.querySelector("#sidebar-box")?.classList.contains("zen-sidebar-compact");
       const sidebarBox = document.querySelector("#sidebar-box");
       const sidebarWidth = sidebarBox?.clientWidth || 0;
+      const isNarrow = sidebarWidth > 0 && sidebarWidth < 280;
       
-      // Switch to compact mode if Zen is in compact mode OR sidebar is less than 280px
-      if (isCompactMode || (sidebarWidth > 0 && sidebarWidth < 280)) {
+      if (!sidebarExpanded || zenCompactAttr || zenCompactClass || isNarrow) {
         sep.classList.add("tidy-tabs-compact");
       } else {
         sep.classList.remove("tidy-tabs-compact");
@@ -3549,6 +3593,32 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       console.log("[TidyTabs] Preference observer registered");
     } catch (e) {
       console.warn("[TidyTabs] Could not register pref observer:", e);
+    }
+  }
+
+  // --- Compact Mode Observer ---
+  // Watches zen-sidebar-expanded attribute so inline buttons hide/show
+  // reactively when the user collapses/expands the Zen sidebar.
+  let compactModeObserver = null;
+  function setupCompactModeObserver() {
+    if (compactModeObserver) return;
+    try {
+      compactModeObserver = new MutationObserver(() => {
+        injectInlineButtons();
+      });
+      compactModeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["zen-sidebar-expanded"],
+      });
+    } catch (e) {
+      console.warn("[TidyTabs] Could not register compact mode observer:", e);
+    }
+  }
+
+  function teardownCompactModeObserver() {
+    if (compactModeObserver) {
+      compactModeObserver.disconnect();
+      compactModeObserver = null;
     }
   }
 
@@ -4090,6 +4160,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
 
       // Stop watching preference changes
       teardownPreferenceObserver();
+      teardownCompactModeObserver();
 
       embeddingEnginePromise = null;
       namingEnginePromise = null;
@@ -4146,6 +4217,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
           addTabEventListeners();
           processExistingTabGroups();
           setupPreferenceObserver();
+          setupCompactModeObserver();
           injectInlineButtons();
           applyGroupTints();
           return true;
