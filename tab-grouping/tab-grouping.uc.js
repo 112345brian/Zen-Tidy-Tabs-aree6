@@ -2741,6 +2741,8 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
     group: "groups",
     folders: "folders",
     ungroup: "ungroup",
+    collapse: "collapse",
+    expand: "expand",
   };
 
   const createInlineIconElement = (iconKey, label) => {
@@ -2984,8 +2986,16 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
 
     if (changed > 0 || groups.length === 0) {
       isAllCollapsed = !isAllCollapsed;
-      // Update button tooltip, icon and label to reflect next action
+
+      // Persist state on separator BEFORE updating button UI, so any
+      // injectInlineButtons triggered by DOM mutations reads the new state.
       const collapseBtn = document.querySelector('.tidy-tabs-inline-btn[data-action="collapse"]');
+      const sep = collapseBtn?.closest(".pinned-tabs-container-separator");
+      if (sep) {
+        sep.dataset.tidyCollapseState = isAllCollapsed ? "collapsed" : "expanded";
+      }
+
+      // Update button tooltip, icon and label to reflect next action
       if (collapseBtn) {
         const newLabel = isAllCollapsed ? "Expand" : "Collapse";
         collapseBtn.title = isAllCollapsed ? "Expand all groups (except active)" : "Collapse all groups (except active)";
@@ -3014,30 +3024,22 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
             } catch {}
           }
         }
-        // Persist state on separator for reconstruction
-        const sep = collapseBtn.closest(".pinned-tabs-container-separator");
-        if (sep) {
-          sep.dataset.tidyCollapseState = isAllCollapsed ? "collapsed" : "expanded";
-        }
       }
     }
   };
 
   // Restore collapse button state after button recreation
-  const restoreCollapseButtonState = (btn, sep) => {
+  const restoreCollapseButtonState = (btn) => {
     if (!btn) return;
-    if (sep && "tidyCollapseState" in sep.dataset) {
-      isAllCollapsed = sep.dataset.tidyCollapseState === "collapsed";
-    }
     
-    // Update label text
+    // Update label text based on global state
     const newLabel = isAllCollapsed ? "Expand" : "Collapse";
     const labelEl = btn.querySelector(".btn-label");
     if (labelEl) {
       labelEl.textContent = newLabel;
     }
     
-    // Update icon based on current state
+    // Update icon based on global state
     const iconKey = isAllCollapsed ? "expand" : "collapse";
     const iconWrap = btn.querySelector(".btn-icon");
     if (iconWrap) {
@@ -3234,7 +3236,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         container.appendChild(btn);
         // Restore collapse button state if this is the collapse button
         if (def.action === "collapse") {
-          restoreCollapseButtonState(btn, sep);
+          restoreCollapseButtonState(btn);
           // Store current state on separator for persistence
           sep.dataset.tidyCollapseState = isAllCollapsed ? "collapsed" : "expanded";
         }
