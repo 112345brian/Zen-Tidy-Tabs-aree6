@@ -2832,10 +2832,19 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       if (url) urlToTab.set(url, tab);
     }
 
+    const referenceNode = Array.from(tabsContainer.children).find((child) => {
+      const tag = child?.tagName?.toLowerCase();
+      return tag !== "tab" && tag !== "tab-group" && tag !== "zen-folder";
+    }) || null;
+
     for (const url of savedUrls) {
       const tab = urlToTab.get(url);
       if (tab?.isConnected && !tab.closest(":is(tab-group, zen-folder)")) {
-        tabsContainer.appendChild(tab);
+        if (referenceNode?.isConnected) {
+          tabsContainer.insertBefore(tab, referenceNode);
+        } else {
+          tabsContainer.appendChild(tab);
+        }
       }
     }
   };
@@ -3015,13 +3024,10 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
   };
 
   // Restore collapse button state after button recreation
-  const restoreCollapseButtonState = (btn) => {
+  const restoreCollapseButtonState = (btn, sep) => {
     if (!btn) return;
-    const sep = btn.closest(".pinned-tabs-container-separator");
-    const wasCollapsed = sep?.dataset?.tidyCollapseState === "collapsed";
-    
-    if (wasCollapsed !== isAllCollapsed) {
-      isAllCollapsed = wasCollapsed;
+    if (sep && "tidyCollapseState" in sep.dataset) {
+      isAllCollapsed = sep.dataset.tidyCollapseState === "collapsed";
     }
     
     // Update label text
@@ -3228,7 +3234,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         container.appendChild(btn);
         // Restore collapse button state if this is the collapse button
         if (def.action === "collapse") {
-          restoreCollapseButtonState(btn);
+          restoreCollapseButtonState(btn, sep);
           // Store current state on separator for persistence
           sep.dataset.tidyCollapseState = isAllCollapsed ? "collapsed" : "expanded";
         }
