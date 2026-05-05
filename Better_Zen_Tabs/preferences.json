@@ -226,77 +226,15 @@
         "placeholder": "e.g. 40px"
       },
 
-  {
-    "type": "separator",
-    "label": "✨ New Tab Button",
-    "margin": "15px 0 15px 0"
-  },
-    {
-      "type": "checkbox",
-      "property": "zen.newtab-button-enabled",
-      "label": "Show new tab button"
-    },
-    {
-      "type": "string",
-      "property": "zen.newtab-button-icon-size",
-      "label": "Icon size",
-      "defaultValue": "16px",
-      "placeholder": "e.g. 16px"
+{
+      "type": "separator",
+      "label": "✨ New Tab Button",
+      "margin": "15px 0 15px 0"
     },
     {
       "type": "checkbox",
-      "property": "zen.newtab-button-bg-enabled",
-      "label": "Background"
-    },
-    {
-      "type": "string",
-      "property": "zen.newtab-button-bg-light",
-      "label": "Background (light mode)",
-      "defaultValue": "rgba(0,0,0,0.04)",
-      "placeholder": "e.g. rgba(0,0,0,0.04)"
-    },
-    {
-      "type": "string",
-      "property": "zen.newtab-button-bg-dark",
-      "label": "Background (dark mode)",
-      "defaultValue": "rgba(255,255,255,0.04)",
-      "placeholder": "e.g. rgba(255,255,255,0.04)"
-    },
-    {
-      "type": "checkbox",
-      "property": "zen.newtab-button-border-enabled",
-      "label": "Border"
-    },
-    {
-      "type": "string",
-      "property": "zen.newtab-button-border-color-light",
-      "label": "Border color (light mode)",
-      "defaultValue": "rgba(0,0,0,0.08)",
-      "placeholder": "e.g. rgba(0,0,0,0.08)"
-    },
-    {
-      "type": "string",
-      "property": "zen.newtab-button-border-color-dark",
-      "label": "Border color (dark mode)",
-      "defaultValue": "rgba(255,255,255,0.08)",
-      "placeholder": "e.g. rgba(255,255,255,0.08)"
-    },
-    {
-      "type": "string",
-      "property": "zen.newtab-button-border-radius",
-      "label": "Border radius",
-      "defaultValue": "1rem",
-      "placeholder": "e.g. 1rem"
-    },
-    {
-      "type": "checkbox",
-      "property": "zen.newtab-button-hide-text",
-      "label": "Hide button text"
-    },
-    {
-      "type": "checkbox",
-      "property": "zen.newtab-button-center-icon",
-      "label": "Center icon"
+      "property": "zen.newtab-button-styling",
+      "label": "Hide text & center icon"
     }
 
 ]

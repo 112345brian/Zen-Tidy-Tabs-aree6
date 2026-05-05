@@ -162,36 +162,19 @@ tab-group[split-view-group] .tabbrowser-tab {
 }
 
 /* ------------------------------------------------------------------
-    NEW TAB BUTTON
-    ------------------------------------------------------------------ */
+   NEW TAB BUTTON
+   ------------------------------------------------------------------ */
 
-#tabs-newtab-button {
-  --newtab-icon-size: var(--zen-newtab-button-icon-size, 16px);
+@media (-moz-bool-pref: "zen.newtab-button-styling") {
+  #tabs-newtab-button .toolbarbutton-text {
+    display: none !important;
+  }
+  #tabs-newtab-button {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
 }
 
-#tabs-newtab-button .toolbarbutton-icon {
-  width: var(--newtab-icon-size) !important;
-  height: var(--newtab-icon-size) !important;
-}
 
-#tabs-newtab-button .toolbarbutton-text {
-  display: none !important;
-}
-
-#tabs-newtab-button {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  border-radius: var(--zen-newtab-button-border-radius, 1rem) !important;
-}
-
-:root[theme="dark"] #tabs-newtab-button {
-  background: var(--zen-newtab-button-bg-dark, rgba(255,255,255,0.04)) !important;
-  border: 1px solid var(--zen-newtab-button-border-color-dark, rgba(255,255,255,0.08)) !important;
-}
-
-:root:not([theme="dark"]) #tabs-newtab-button {
-  background: var(--zen-newtab-button-bg-light, rgba(0,0,0,0.04)) !important;
-  border: 1px solid var(--zen-newtab-button-border-color-light, rgba(0,0,0,0.08)) !important;
-}
 
