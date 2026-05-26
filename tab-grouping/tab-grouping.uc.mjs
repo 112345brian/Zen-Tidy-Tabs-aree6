@@ -712,8 +712,23 @@
     const lines = validTabs.map((tab, i) => {
       const title = (getTabTitle(tab) || "Untitled").slice(0, 140);
       const host = getTabHost(tab) || "—";
-      // Hostname is secondary context — put it at the end so the model
-      // focuses on the title's semantic topic, not the domain.
+      // Include meaningful URL path segments as extra context so the model
+      // can distinguish e.g. github.com/org/repo/issues vs /pulls vs /wiki.
+      try {
+        const spec = tab?.linkedBrowser?.currentURI?.spec;
+        if (spec && !spec.startsWith("about:")) {
+          const url = new URL(spec);
+          const pathHint = url.pathname
+            .split("/")
+            .map((s) => decodeURIComponent(s).trim())
+            .filter((s) => s.length > 2 && !/^[\d\-_.]+$/.test(s) && !/^[a-f0-9]{8,}$/i.test(s))
+            .slice(0, 3)
+            .join("/");
+          if (pathHint) {
+            return `${i + 1}. ${title}  (${host}/${pathHint})`;
+          }
+        }
+      } catch { /* ignore */ }
       return `${i + 1}. ${title}  (${host})`;
     });
 
@@ -761,8 +776,8 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
           model: modelId,
           models: getOpenRouterFallbackModels(modelId),
           // Output is bounded roughly by (groups * ~30 chars) + tab numbers;
-          // 1024 is comfortable headroom for ~100 tabs across ~20 groups.
-          max_tokens: 1024,
+          // 2048 gives headroom for ~100 tabs across ~30 groups with longer names.
+          max_tokens: 2048,
           temperature: 0.3,
           ...(reasoning ? { reasoning } : {}),
           messages: [
@@ -1265,7 +1280,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
     for (let i = 0; i < tabs.length; i += batchSize) {
       const batch = tabs.slice(i, i + batchSize);
       const batchResults = await Promise.all(
-        batch.map((tab) => generateEmbedding(getTabTitle(tab)))
+        batch.map((tab) => generateEmbedding(getTabEmbeddingText(tab)))
       );
       results.push(...batchResults);
     }
@@ -1453,7 +1468,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         const engine = await getGroupNamingEngine();
         const aiResult = await engine.run({
           args: [input],
-          options: { max_new_tokens: 8, temperature: 0.7 },
+          options: { max_new_tokens: 24, temperature: 0.7 },
         });
 
         return sanitizeGroupNameForSorting(aiResult?.[0]?.generated_text || "Group", titles);
@@ -1880,6 +1895,36 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       return new URL(spec).hostname.replace(/^www\./, "").toLowerCase();
     } catch {
       return "";
+    }
+  };
+
+  // Build a richer text representation for embeddings by appending meaningful
+  // URL path segments to the title. Strips noise (UUIDs, long hashes, pure
+  // numeric IDs) so the model doesn't embed junk.
+  const getTabEmbeddingText = (tab) => {
+    const title = getTabTitle(tab) || "";
+    try {
+      const spec = tab?.linkedBrowser?.currentURI?.spec;
+      if (!spec || spec.startsWith("about:") || spec.startsWith("moz-extension:")) {
+        return title;
+      }
+      const url = new URL(spec);
+      const segments = url.pathname
+        .split("/")
+        .map((s) => decodeURIComponent(s).trim())
+        // Drop empty, purely numeric, UUID-like, or very short segments
+        .filter((s) => s.length > 2 && !/^[\d\-_.]+$/.test(s) && !/^[a-f0-9]{8,}$/i.test(s))
+        // Humanise slug-style segments: "how-to-use-react" → "how to use react"
+        .map((s) => s.replace(/[-_]/g, " ").toLowerCase())
+        .slice(0, 4); // at most 4 path segments to avoid noise
+      if (segments.length === 0) return title;
+      // Deduplicate against words already in the title to avoid repetition
+      const titleWords = new Set(title.toLowerCase().split(/\s+/));
+      const novel = segments.filter((s) => !titleWords.has(s));
+      if (novel.length === 0) return title;
+      return `${title} ${novel.join(" ")}`.trim();
+    } catch {
+      return title;
     }
   };
 
@@ -2419,19 +2464,18 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       }
 
       // --- Rescue ungrouped tabs ---
+      // Always run rescue regardless of which engine ran — OpenRouter and
+      // local AI can also leave tabs ungrouped, and keyword/hostname rescue
+      // is cheap enough to always be worth running.
       if (!isCurrentSortRun(runId)) return;
-      if (usedFuzzy) {
-        console.log(
-          `[TabSort] Running post-grouping rescue passes on ${Object.keys(finalGroups).length} initial group(s).`
-        );
-        finalGroups = applyPostGroupingRescue(
-          initialTabsToSort,
-          finalGroups,
-          CONFIG.GROUP_LEFTOVERS_AS_MISC
-        );
-      } else {
-        console.log(`[TabSort] Skipping rescue passes — fuzzy was not used.`);
-      }
+      console.log(
+        `[TabSort] Running post-grouping rescue passes on ${Object.keys(finalGroups).length} initial group(s).`
+      );
+      finalGroups = applyPostGroupingRescue(
+        initialTabsToSort,
+        finalGroups,
+        CONFIG.GROUP_LEFTOVERS_AS_MISC
+      );
 
       const finalGroupNames = Object.keys(finalGroups);
       console.log(
