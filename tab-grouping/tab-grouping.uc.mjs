@@ -476,6 +476,7 @@
       includePinned = false,
       includeEmpty = false,
       includeGlance = false,
+      includeBlank = true,   // set false to skip new/blank tabs with no content yet
     } = options;
 
     return Array.from(gBrowser.tabs).filter((tab) => {
@@ -488,6 +489,8 @@
       const groupParent =
         tab.group ?? tab.closest(":is(tab-group, zen-folder)");
       const isInGroup = !!groupParent;
+
+      if (!includeBlank && !hasMeaningfulTitleSignal(getTabTitle(tab))) return false;
 
       return (
         (includePinned || !tab.pinned) &&
@@ -2306,7 +2309,8 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
   //   - Fuzzy token similarity (title + hostname) otherwise
   // `useFolders`: true  -> create Zen Folders (pinned)
   //               false -> create regular tab groups
-  const sortTabsByTopic = async (useFolders = false) => {
+  // `options.skipBlank`: true -> exclude tabs with no meaningful content yet
+  const sortTabsByTopic = async (useFolders = false, { skipBlank = false } = {}) => {
     if (isSorting) return;
     isSorting = true;
     setSortingVisualState(true);
@@ -2353,6 +2357,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         includePinned: useFolders,
         includeEmpty: false,
         includeGlance: false,
+        includeBlank: !skipBlank,
       }).filter((tab) => {
         if (shouldProtectTabFromGrouping(tab)) return false;
         return !isTabInWorkspaceGroup(tab, currentWorkspaceId);
@@ -4199,7 +4204,9 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       if (autoSortTimer) clearTimeout(autoSortTimer);
       autoSortTimer = setTimeout(() => {
         autoSortTimer = null;
-        sortTabsByTopic(false);
+        // skipBlank: never sort a tab that hasn't loaded real content yet —
+        // new/blank tabs have no signal and would fall into Miscellaneous.
+        sortTabsByTopic(false, { skipBlank: true });
       }, CONFIG.AUTO_SORT_DEBOUNCE_MS);
     };
     gBrowser.tabContainer.addEventListener("TabOpen", autoSortTabOpenHandler);
