@@ -3,7 +3,7 @@
   "name": "Zen Tree Connectors",
   "description": "Visual tree connectors for Zen Browser folder tabs and tab groups",
   "scripts": {
-    "tree-connectors.uc.js": {
+    "tree-connectors.uc.mjs": {
       "include": [
         "chrome://browser/content/browser.xhtml"
       ]

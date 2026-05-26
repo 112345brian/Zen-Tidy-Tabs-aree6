@@ -3,7 +3,7 @@
   "name": "Zen Tab Grouping",
   "description": "AI-powered tab sorting and grouping for Zen Browser",
   "scripts": {
-    "tab-grouping.uc.js": {
+    "tab-grouping.uc.mjs": {
       "include": [
         "chrome://browser/content/browser.xhtml"
       ]
