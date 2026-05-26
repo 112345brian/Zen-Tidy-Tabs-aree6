@@ -3,6 +3,15 @@
   --tidy-tabs-line-current-opacity: var(--tidy-tabs-line-opacity, 0.35);
 }
 
+/* Fix zen-folder group headers — native pack="center" centers them incorrectly */
+zen-folder > .tab-group-label-container {
+  justify-content: flex-start !important;
+}
+
+zen-folder > .tab-group-label-container .tab-group-label {
+  text-align: start !important;
+}
+
 .pinned-tabs-container-separator.tidy-tabs-inline-active {
   background: transparent !important;
   border: none !important;
@@ -288,6 +297,18 @@ tab-group:not(zen-folder) .tabbrowser-tab[group]::before {
 }
 .tidy-tabs-inline-btn:active {
   opacity: 0.82;
+}
+
+/* Toggle button — armed state */
+.tidy-tabs-inline-btn.tidy-tabs-btn-active {
+  opacity: 1;
+  color: var(--sidebar-text-color, currentColor) !important;
+  background: color-mix(in srgb, currentColor 14%, transparent) !important;
+  border-radius: 4px !important;
+}
+
+.tidy-tabs-inline-btn.tidy-tabs-btn-active:hover {
+  background: color-mix(in srgb, currentColor 22%, transparent) !important;
 }
 
 /* --- Visibility: HOVER mode (default) --------------------------- */

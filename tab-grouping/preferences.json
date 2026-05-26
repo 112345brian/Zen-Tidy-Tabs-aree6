@@ -84,6 +84,25 @@
 
     {
       "type": "separator",
+      "label": "🔄 Auto-Sort",
+      "margin": "15px 0 15px 0"
+    },
+      {
+        "property": "zen.tidytabs.behavior.auto-sort-on-new-tab",
+        "label": "Auto-sort when a tab opens or closes (debounced)",
+        "type": "checkbox",
+        "defaultValue": false
+      },
+      {
+        "property": "zen.tidytabs.behavior.auto-sort-debounce-ms",
+        "label": "Auto-sort debounce delay (ms)",
+        "type": "string",
+        "defaultValue": "5000",
+        "placeholder": "e.g. 5000"
+      },
+
+    {
+      "type": "separator",
       "label": "🔒 Protection",
       "margin": "15px 0 15px 0"
     },
@@ -241,6 +260,12 @@
       "label": "🔘 Which Buttons",
       "margin": "15px 0 15px 0"
     },
+      {
+        "property": "zen.tidytabs.ui.show-auto-sort-toggle",
+        "label": "Show Auto-sort toggle button (arm/disarm auto-sort on new tab)",
+        "type": "checkbox",
+        "defaultValue": false
+      },
       {
         "property": "zen.tidytabs.ui.show-sort-button",
         "label": "Show Groups button (group tabs)",
