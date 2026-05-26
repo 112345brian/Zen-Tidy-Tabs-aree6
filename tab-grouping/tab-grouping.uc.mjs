@@ -4212,7 +4212,6 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       }, CONFIG.AUTO_SORT_DEBOUNCE_MS);
     };
     gBrowser.tabContainer.addEventListener("TabOpen", autoSortTabOpenHandler);
-    gBrowser.tabContainer.addEventListener("TabClose", autoSortTabOpenHandler);
 
     eventListenersAdded = true;
   }
@@ -4257,7 +4256,6 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
 
       if (autoSortTabOpenHandler && typeof gBrowser !== "undefined" && gBrowser?.tabContainer) {
         gBrowser.tabContainer.removeEventListener("TabOpen", autoSortTabOpenHandler);
-        gBrowser.tabContainer.removeEventListener("TabClose", autoSortTabOpenHandler);
         autoSortTabOpenHandler = null;
       }
 

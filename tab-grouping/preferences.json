@@ -89,7 +89,7 @@
     },
       {
         "property": "zen.tidytabs.behavior.auto-sort-on-new-tab",
-        "label": "Auto-sort when a tab opens or closes (debounced)",
+        "label": "Auto-sort when a new tab opens (debounced)",
         "type": "checkbox",
         "defaultValue": false
       },
