@@ -2310,7 +2310,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
   // `useFolders`: true  -> create Zen Folders (pinned)
   //               false -> create regular tab groups
   // `options.skipBlank`: true -> exclude tabs with no meaningful content yet
-  const sortTabsByTopic = async (useFolders = false, { skipBlank = false } = {}) => {
+  const sortTabsByTopic = async (useFolders = false, { skipBlank = false, skipMisc = false } = {}) => {
     if (isSorting) return;
     isSorting = true;
     setSortingVisualState(true);
@@ -2479,7 +2479,9 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
       finalGroups = applyPostGroupingRescue(
         initialTabsToSort,
         finalGroups,
-        CONFIG.GROUP_LEFTOVERS_AS_MISC
+        // Never create a Miscellaneous catchall during auto-sort — tabs with
+        // no clear group should stay loose rather than pile into Misc.
+        skipMisc ? false : CONFIG.GROUP_LEFTOVERS_AS_MISC
       );
 
       const finalGroupNames = Object.keys(finalGroups);
@@ -4206,7 +4208,7 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         autoSortTimer = null;
         // skipBlank: never sort a tab that hasn't loaded real content yet —
         // new/blank tabs have no signal and would fall into Miscellaneous.
-        sortTabsByTopic(false, { skipBlank: true });
+        sortTabsByTopic(false, { skipBlank: true, skipMisc: true });
       }, CONFIG.AUTO_SORT_DEBOUNCE_MS);
     };
     gBrowser.tabContainer.addEventListener("TabOpen", autoSortTabOpenHandler);
