@@ -2309,8 +2309,12 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
   //   - Fuzzy token similarity (title + hostname) otherwise
   // `useFolders`: true  -> create Zen Folders (pinned)
   //               false -> create regular tab groups
-  // `options.skipBlank`: true -> exclude tabs with no meaningful content yet
-  const sortTabsByTopic = async (useFolders = false, { skipBlank = false, skipMisc = false } = {}) => {
+  // `options.skipBlank`:   true -> exclude tabs with no meaningful content yet
+  // `options.skipMisc`:    true -> don't create a Miscellaneous catchall group
+  // `options.workspaceId`: pin the sort to a specific workspace captured at
+  //                        event time, preventing race conditions when the user
+  //                        switches workspaces during the debounce window.
+  const sortTabsByTopic = async (useFolders = false, { skipBlank = false, skipMisc = false, workspaceId = null } = {}) => {
     if (isSorting) return;
     isSorting = true;
     setSortingVisualState(true);
@@ -2329,7 +2333,9 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
         });
       }
 
-      const currentWorkspaceId = window.gZenWorkspaces?.activeWorkspace;
+      // Prefer the workspace ID captured at event-time (passed via options) so
+      // a workspace switch during the debounce window doesn't redirect the sort.
+      const currentWorkspaceId = workspaceId || window.gZenWorkspaces?.activeWorkspace;
       if (!currentWorkspaceId) {
         console.error("Cannot get current workspace ID.");
         return; // Exit early
@@ -4201,14 +4207,20 @@ Output format: {"Specific Subject": [1,2,3], "Another Subject": [4,5]}
 
     // --- Auto-sort on new tab ---
     let autoSortTimer = null;
+    let autoSortWorkspaceId = null;
     autoSortTabOpenHandler = () => {
       if (!CONFIG.AUTO_SORT_ON_NEW_TAB) return;
+      // Capture workspace at event-time so a workspace switch during the
+      // debounce window doesn't redirect the sort to the wrong workspace.
+      autoSortWorkspaceId = window.gZenWorkspaces?.activeWorkspace ?? null;
       if (autoSortTimer) clearTimeout(autoSortTimer);
       autoSortTimer = setTimeout(() => {
         autoSortTimer = null;
+        const pinnedWorkspaceId = autoSortWorkspaceId;
+        autoSortWorkspaceId = null;
         // skipBlank: never sort a tab that hasn't loaded real content yet —
         // new/blank tabs have no signal and would fall into Miscellaneous.
-        sortTabsByTopic(false, { skipBlank: true, skipMisc: true });
+        sortTabsByTopic(false, { skipBlank: true, skipMisc: true, workspaceId: pinnedWorkspaceId });
       }, CONFIG.AUTO_SORT_DEBOUNCE_MS);
     };
     gBrowser.tabContainer.addEventListener("TabOpen", autoSortTabOpenHandler);
