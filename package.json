@@ -1,0 +1,7 @@
+{
+  "name": "zen-tidy-tabs",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/unit.test.mjs"
+  }
+}
